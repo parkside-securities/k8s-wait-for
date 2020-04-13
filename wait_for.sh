@@ -14,7 +14,7 @@ TREAT_ERRORS_AS_READY=0
 
 usage() {
 cat <<EOF
-This script waits until a job, pod or service enter ready state. 
+This script waits until a job, pod or service enter ready state.
 
 ${0##*/} job [<job name> | -l<kubectl selector>]
 ${0##*/} pod [<pod name> | -l<kubectl selector>]
@@ -181,10 +181,14 @@ get_job_state() {
 wait_for_resource() {
     wait_for_resource_type=$1
     wait_for_resource_descriptor="$2"
+    reduce_log=1
     while [ -n "$(get_${wait_for_resource_type}_state "$wait_for_resource_descriptor")" ] ; do
         print_KUBECTL_ARGS="$KUBECTL_ARGS"
         [ "$print_KUBECTL_ARGS" != "" ] && print_KUBECTL_ARGS=" $print_KUBECTL_ARGS"
-        echo "Waiting for $wait_for_resource_type $wait_for_resource_descriptor${print_KUBECTL_ARGS}..."
+        if [ $((reduce_log % 10)) -eq 1 ]; then
+            echo "Waiting for $wait_for_resource_type $wait_for_resource_descriptor${print_KUBECTL_ARGS}..."
+        fi
+        reduce_log=$((reduce_log + 1))
         sleep "$WAIT_TIME"
     done
     ready "$wait_for_resource_type" "$wait_for_resource_descriptor"
