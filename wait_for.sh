@@ -14,11 +14,12 @@ TREAT_ERRORS_AS_READY=0
 
 usage() {
 cat <<EOF
-This script waits until a job, pod or service enter ready state.
+This script waits until a job, pod, workspace  or service enter ready state.
 
 ${0##*/} job [<job name> | -l<kubectl selector>]
 ${0##*/} pod [<pod name> | -l<kubectl selector>]
 ${0##*/} service [<service name> | -l<kubectl selector>]
+${0##*/} workspace [<workspace name> | -l<kubectl selector>]
 
 Examples:
 Wait for all pods with with a following label to enter 'Ready' state:
@@ -120,6 +121,16 @@ get_service_state() {
     echo "$get_service_state_states"
 }
 
+# Terraform cloud Workspace runStatus
+# ready when 'applied'
+get_workspace_state() {
+    get_workspace_state_name="$1"
+    get_workspace_state=$(kubectl get workspace "$get_workspace_state_name" -o jsonpath='{.status.runStatus}')
+    if [ "x${get_workspace_state}" != "xapplied" ]; then
+	echo "$get_workspace_state"
+    fi
+}
+
 # Job or set of jobs is considered ready if all of them succeeded at least once
 # example output with 2 still running jobs would be "0 0"
 # this function considers the line:
@@ -152,10 +163,10 @@ get_job_state() {
     if [ $DEBUG -ge 1 ]; then
         echo "$get_job_state_output1" >&2
     fi
-    
+
     # Map triplets of <running>:<succeeded>:<failed> to not ready (emit 1) state
     if [ $TREAT_ERRORS_AS_READY -eq 0 ]; then
-        # Two conditions: 
+        # Two conditions:
         #   - pods are distributed between all 3 states with at least 1 pod running - then emit 1
         #   - or more then 1 pod have failed and some are completed - also emit 1
         sed_reg='-e s/^[1-9][[:digit:]]*:[[:digit:]]+:[[:digit:]]+$/1/p -e s/^0:[[:digit:]]+:[1-9][[:digit:]]+$/1/p'
@@ -165,7 +176,7 @@ get_job_state() {
         #   - all other options include all pods Completed or Failed - which are fine
         sed_reg='-e s/^[1-9][[:digit:]]*:[[:digit:]]+:[[:digit:]]+$/1/p'
     fi
-    
+
     get_job_state_output2=$(printf "%s" "$get_job_state_output1" | sed -nr $sed_reg 2>&1)
     if [ $DEBUG -ge 1 ]; then
         echo "$get_job_state_output2" >&2
@@ -206,7 +217,7 @@ main() {
     fi
 
     case "$1" in
-        pod|service|job)
+        pod|service|job|workspace)
             main_resource=$1
             shift
             ;;
