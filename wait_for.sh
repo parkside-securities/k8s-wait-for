@@ -125,7 +125,7 @@ get_service_state() {
 # ready when 'applied'
 get_workspace_state() {
     get_workspace_state_name="$1"
-    get_workspace_state=$(kubectl get workspace "$get_workspace_state_name" -o jsonpath='{.status.runStatus}')
+    get_workspace_state=$(kubectl get workspace "$get_workspace_state_name" -o jsonpath='{.status.runStatus}' 2>&1)
     if [ "x${get_workspace_state}" = "xapplied" ]; then
 	echo ""
     else
