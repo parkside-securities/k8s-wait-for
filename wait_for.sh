@@ -129,7 +129,7 @@ get_workspace_state() {
     if [ "x${get_workspace_state}" = "xapplied" ]; then
 	echo ""
     else
-	echo "$get_workspace_state"
+	echo "$get_workspace_state not ready"
     fi
 }
 
